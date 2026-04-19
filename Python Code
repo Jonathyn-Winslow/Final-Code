@@ -1,0 +1,244 @@
+
+
+def load_map(filename):
+    """This takes the maze text file and turns it into a list for the GUI"""
+    maze = [] #starts with an empty list
+    with open(filename, 'r') as file:
+        for line in file:
+            string_values = line.strip().split() # removes garbage at ends of the string and splits each term into its own element
+                
+            ints = []
+            for n in string_values:
+                numbers = int(n) # changes the strings into integers
+                ints.append(numbers) 
+
+            maze.append(ints) # adds each integer into the maze list
+    
+    return maze
+
+def start_pos(maze):
+    """finds the starting position of the player"""
+    for y in range(len(maze)): # goes through the rows of the maze
+        for x in range(len(maze[0])): # goes through the columns. we need to do this because this is a 2D array
+            if maze[y][x] == 3: # 3 is the player
+                player = (x, y) # creates a tuple with the players location
+                maze[y][x] = 0 # sets the player value to empty space to ensure the collision check doesn't get confused
+                return player # returns the tuple    
+            
+def move(position, direction, maze):
+    """filler"""
+    x, y = position
+    dx, dy = direction # used dy and dx because it helps me visualize movement because T'm used to math
+
+    new_x = x + dx # adds position and movement to get the new position
+    new_y = y + dy
+
+    if maze[new_y][new_x] != 1 and maze[new_y][new_x] != 5: # 1 is a wall and 5 is the boarder so this ensures that we can't move through it
+        return (new_x, new_y)
+    
+    return position
+
+def get_direction(keys):
+    """Utilizes pygame to take arrow key inputs and turns them into a direction tuple"""
+    if keys[pygame.K_UP]: #pygame for up arrow
+        return (0, -1) # the y axis is inverted in pygame due to our list setup so up is -1
+    elif keys[pygame.K_DOWN]:
+        return (0, 1) # left and right are still the normal direction
+    elif keys[pygame.K_LEFT]:
+        return (-1, 0)
+    elif keys[pygame.K_RIGHT]:
+        return (1, 0)
+    else:
+        return (0, 0) # if no input is registered, do nothing
+    
+def direction_scramble(keys):
+    """Uses pygame to create direction tuples based on arrow key inputs but scrambles the directions"""
+    if keys[pygame.K_UP]:
+        return (1, 0) # for up arrow, it will go right
+    elif keys[pygame.K_DOWN]:
+        return (-1, 0)
+    elif keys[pygame.K_LEFT]:
+        return (0, 1)
+    elif keys[pygame.K_RIGHT]:
+        return (0, -1)
+    else:
+        return (0, 0)
+    
+def wall_swap(maze, position):
+    """will swap all walls and empty spaces without effecting anything else"""
+    for y in range(len(maze)): #goes doen the y axis of the list
+        for x in range(len(maze[0])): # goes across the x axis of the list
+            if (x, y) == position: # if the coordinate is on the player, this does nothing and doesn't swap the wall
+                continue
+            elif maze[y][x] == 1: 
+                maze[y][x] = 0 # turns wall into empty space
+            elif maze[y][x] == 0:
+                maze[y][x] = 1 # turns empty space into a wall
+            
+    return maze # This doesn't effect items such as keys or doorways because they have different numbers assigned to them
+
+def load_level(current_level):
+    """will load the maze and starting position for the level"""
+    if current_level == 1:
+        filename = 'maze1.txt' # load the first map file
+    elif current_level == 2:
+        filename = 'maze2.txt' # load the second map file
+    elif current_level == 3:
+        filename = 'maze3.txt' # load the third map file
+
+    maze = load_map(filename) # uses the previous load_map function to turn the text file into list
+    position = start_pos(maze) # finds the start position of the new map file
+
+    return maze, position
+
+def switch_level(level, position, maze): # ChatGPT was used to debug this. I initially used position to change levels but it caused errors when you weren't in the perfect position
+                                        # GPT gave me the idea to use the tiles we created instead and that fixed the issue
+    """switches the level based on the player's position"""
+    x, y = position
+
+    if maze[y][x] == 4: # 4 is doorway to next level
+        if level == 1:
+            return 2 # only one doorway in this level
+        elif level == 2:
+            return 3 # this is the doorway at the end of map 2
+        elif level == 3:
+            return 2 # only doorway in map 3
+    elif maze[y][x] == 6: # declared 6 to be secondary door in map 2 to return to map 1
+        return 1
+
+    return level
+
+def win(position, current_level, key_state, maze):
+    """checks if the player has won the game by being in the correct position with the key"""
+    x, y = position
+    if maze[y][x] and current_level == 1 and key_state == True: # must be on the correct tile, kave the key, and be on map 1
+        return True
+    
+    return False
+
+def time_check(start_time, time_limit):
+    """checks if the time limit has been exceeded"""
+    current_time = time.time() # takes the current time which doesn't matter if it is different between playthroughs
+    elapsed = current_time - start_time # start time starts the moment you press run and this compares the 2 values to find how much time has passed
+
+    if elapsed > time_limit: # time limit will be set just before the game loop starts to comare. we can change this at will
+        return True
+    
+    return False
+
+def key_pickup(maze, position, key_state, current_level): # used to place key, and check if it is picked up
+    """checks if the player is on the key and removes key if so"""
+    x, y = position
+
+    if current_level == 3 and not key_state: # the only key is in level 3 so this checks if they are on level 3 and doesn't already have the key
+    
+        if maze[y][x] == 2: # if players position indexed into the maze is a 2, it marks the key_state to be true
+            key_state = True
+            maze[y][x] = 0 # turns key tile into empty space to show its no longer there
+                    
+    return key_state, maze
+
+import os
+import subprocess # used to run the matlab file #GOOGLE USED
+#GOOGLE USED CHATGPT USED TO DEBUG
+#GOOGLE USED
+#GOOGLE USED
+#GOOGLE USED
+#GOOGLE USED
+#GOOGLE USED
+#GOOGLE USED
+#GOOGLE USED
+#GOOGLE USED
+import pygame # used to draw the maze and take inputs
+import time # used to track time for lose condition
+
+
+subprocess.run(['matlab', '-r', 'MazeGame'], check=True)
+while not (os.path.exists("maze1.txt") and os.path.exists("maze2.txt") and os.path.exists("maze3.txt")):
+    time.sleep(0.1)
+
+pygame.init() # initializes all pygame modules
+
+WIDTH = 1000 
+HEIGHT = 1000 # 1000 x 1000 pixels
+TILE_SIZE = 50 # tile size is 50 so it will be a 20 x 20 tile map
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT)) # creates the game window with the pre set dimensions
+pygame.display.set_caption("Maze Game") # adds a title that is on the top right part of the game window
+
+clock = pygame.time.Clock() # this creates a clock object to control the fps of the game. it moves too fast without this
+
+current_level = 1 # starts on the first level
+maze, position = load_level(current_level) # loads the maze and starting position
+
+key_state = False # makes sure the player doesn't start witht the key and tracks it for later
+start_time = time.time() # time when player clicks run. exact time doesn't matter because it compares with current_time to find elapsed time
+time_limit = 120 # set the limit to 120 seconds. seems like a good medium of not too long or short
+
+running = True # flag
+
+while running:
+    clock.tick(60) # lock framerate at 60fps to slow the game down
+
+    for event in pygame.event.get(): # loops through all player inputs such as keyboard inputs or closing the window.
+        if event.type == pygame.QUIT: # shuts the game down when user clicks the close window button
+            running = False
+
+        if event.type == pygame.KEYDOWN: # this will handle movement
+            keys = pygame.key.get_pressed() # takes the current state of all keys
+            if current_level == 2:
+                direction = direction_scramble(keys) # only scrambles inputs when you are in level 2
+            else:
+                direction = get_direction(keys)
+
+            position = move(position, direction, maze) # move the player based on directions and maze collision
+
+            if event.key == pygame.K_SPACE and current_level == 3: # used for wall swap and ensures it only activates on level 3
+                maze = wall_swap(maze, position)
+        
+    key_state, maze = key_pickup(maze, position, key_state, current_level) # checks for if player has picked up the key (should only activate when player is on map 3 and correct coordinate)
+
+    
+    new_level = switch_level(current_level, position, maze) # handles switching level depending on current level and if player is on the doorway tile
+
+    if new_level != current_level: # if the level changes, load the correct maze and set plaer to correct start position
+        current_level = new_level # updates the current level to the new level number
+        maze, position = load_level(current_level) # loads the new level
+
+    if win(position, current_level, key_state, maze): # handles win if player has key, on level 1, and is on the correct tile
+        print("\nYou Win!\n") # prints the user won in the terminal with an empty line above and below for readability
+        running = False # this closes pygame due to the close item outside of the while loop at the end of the code
+
+    if time_check(start_time, time_limit): # this handles if the player lost by taking too much time
+        print("\nTime's up! You lose.\n") # same concept as the win text
+        running = False # same as the win function
+    
+    screen.fill((0, 0, 0)) # clears map to ensure the color from the player and key changes update the map. without this, the user color 'smears' across the maze
+
+    for y in range(len(maze)):
+        for x in range(len(maze[0])): # loops through every tile in the maze and draws it with the correct color
+            tile = maze[y][x]
+            rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE) # creates a rectangle for the tile's position on the screen
+
+            if tile == 1:
+                #                          ⌄ the color values (1st = red, 2nd = grenn, 3rd = blue)
+                pygame.draw.rect(screen, (255, 255, 255), rect) # draws white rectangles for walls
+                # ^draws rectangle ^the screen is what we are drawing on
+            elif tile == 5:
+                pygame.draw.rect(screen, (100, 100, 100), rect) # draws grey rectangles for boarder
+            elif tile == 4:
+                pygame.draw.rect(screen, (0, 0, 255), rect) # draws doors in blue
+            elif tile == 6:
+                pygame.draw.rect(screen, (0, 0, 255), rect) # 6 is the backwards door on map 2 and it will also be blue
+            elif tile == 2:
+                pygame.draw.rect(screen, (255, 255, 0), rect) # makes keys yellow because that color is associated with most keys in games
+            elif tile == 9:
+                pygame.draw.rect(screen, (0, 255, 0), rect) # makes the goal tile green because green indicates a win
+
+    player_x, player_y = position # draws the player as a red rectangle the same size as other tiles on top of the maze
+    pygame.draw.rect(screen, (255, 0, 0),
+                     (player_x * TILE_SIZE, player_y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+
+    pygame.display.flip() # updates the display so everything appears on screen
+
+pygame.quit() # outside the while loop so when we break out, it closes pygame which closes the window and maze
